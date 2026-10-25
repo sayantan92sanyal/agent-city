@@ -3,21 +3,15 @@
 // exits 1 with "requires --verbose".
 const BASE_ARGS = ['-p', '--output-format', 'stream-json', '--verbose'];
 
-// `--tools` restricts which built-in tools are available to the session.
-// (`--allowedTools` is only a permission auto-approve list and restricts
-// nothing under `bypassPermissions`.) An empty/unset tools list means
-// "inherit the default tool set", so the flag is omitted entirely in that
-// case — passing `--tools ''` would instead disable *all* tools.
-function toolsArgs(tools) {
-  const list = (tools ?? []).filter(Boolean);
-  return list.length > 0 ? ['--tools', list.join(',')] : [];
-}
-
-function commonArgs(agentName, tools) {
+// No `--tools` here: `--agent` already limits the agent to the tools in its
+// file, while `--tools` would cap the whole session, so any helper agent it
+// starts (through the Agent tool) would lose its own tools too. (Checked with
+// claude: with `--tools Read,Glob,Agent` a general-purpose helper could not
+// write a file; with only `--agent` it could.)
+function commonArgs(agentName) {
   return [
     ...BASE_ARGS,
     '--agent', agentName,
-    ...toolsArgs(tools),
     '--permission-mode', 'bypassPermissions',
   ];
 }
@@ -30,12 +24,12 @@ function promptArgs(message) {
   return message === null ? ['--input-format', 'stream-json'] : ['--', message];
 }
 
-export function buildStartArgs({ agentName, tools, sessionId, message }) {
-  return [...commonArgs(agentName, tools), '--session-id', sessionId, ...promptArgs(message)];
+export function buildStartArgs({ agentName, sessionId, message }) {
+  return [...commonArgs(agentName), '--session-id', sessionId, ...promptArgs(message)];
 }
 
-export function buildResumeArgs({ agentName, tools, sessionId, message }) {
-  return [...commonArgs(agentName, tools), '--resume', sessionId, ...promptArgs(message)];
+export function buildResumeArgs({ agentName, sessionId, message }) {
+  return [...commonArgs(agentName), '--resume', sessionId, ...promptArgs(message)];
 }
 
 export function buildMayorArgs({ sessionId, resume, message, mcpConfigPath, addDirs, systemPrompt }) {
@@ -50,6 +44,6 @@ export function buildMayorArgs({ sessionId, resume, message, mcpConfigPath, addD
   ];
 }
 
-export function buildOneOffArgs({ agentName, tools, message }) {
-  return [...commonArgs(agentName, tools), '--no-session-persistence', ...promptArgs(message)];
+export function buildOneOffArgs({ agentName, message }) {
+  return [...commonArgs(agentName), '--no-session-persistence', ...promptArgs(message)];
 }

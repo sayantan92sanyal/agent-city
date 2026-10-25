@@ -88,7 +88,6 @@ export function sendToStandingChat(agent, message, attachments) {
     argsFor: ({ sessionId, resume, message: m }) =>
       (resume ? buildResumeArgs : buildStartArgs)({
         agentName: agent.name,
-        tools: agent.tools,
         sessionId,
         message: m,
       }),
@@ -137,7 +136,7 @@ export async function runStandingChat({ id, cwd, env, argsFor, message, attachme
 }
 
 export async function runOneOff(agent, message, attachments) {
-  const args = buildOneOffArgs({ agentName: agent.name, tools: agent.tools, message: argvMessage(message, attachments) });
+  const args = buildOneOffArgs({ agentName: agent.name, message: argvMessage(message, attachments) });
   const turnPromise = runTurn({ args, cwd: agent.projectPath, message, attachments, agent });
 
   let runsForAgent = oneOffRuns.get(agent.id);
