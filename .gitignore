@@ -1,0 +1,9 @@
+node_modules/
+client/dist/
+.DS_Store
+*.log
+.env
+.env.*
+# Local tool state (Claude Code worktrees, Superpowers scratch)
+.claude/
+.superpowers/

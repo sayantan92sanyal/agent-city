@@ -1,0 +1,490 @@
+/* Chat view — the past-chats list and an open conversation, inside
+ * `.app.app-city`. The conversation reuses the city's `.app-city .transcript`
+ * reading styles, so it looks the same as an agent chat; the pixel font
+ * stays on the list, headings and buttons. The dialog theme tokens are
+ * redefined here because the screen is not a `.panel`. */
+
+.app-city .chat-screen {
+  --surface: #262447;
+  --surface-muted: #2e2c55;
+  --text: #fff6d0;
+  --text-muted: #c9c3a6;
+  --border: #6b6890;
+  --accent: #e8b830;
+  --accent-text: #2a1a00;
+  --danger: #ff8a80;
+  --user-bubble: #2a3a66;
+  --agent-bubble: #2e2c55;
+
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--city-hud);
+  color: var(--text);
+}
+
+/* ---- Buttons (same pixel buttons as the dialogs) ---- */
+
+.app-city .chat-screen button {
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 0;
+  border: 3px outset #dde;
+  background: #9aa;
+  color: var(--city-ink);
+  cursor: pointer;
+  -webkit-font-smoothing: none;
+}
+
+.app-city .chat-screen button[type='submit'],
+.app-city .chat-screen .chat-new-btn {
+  background: var(--city-gold);
+  border-color: #fff3a0;
+  color: #2a1a00;
+}
+
+.app-city .chat-screen button:active:not(:disabled) {
+  border-style: inset;
+}
+
+.app-city .chat-screen button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.app-city .chat-screen button:focus-visible {
+  outline: 3px solid var(--city-yellow);
+  outline-offset: 0;
+}
+
+/* ---- List column ---- */
+
+.chat-list {
+  flex: none;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 4px solid var(--city-ink);
+  background: #1a1834;
+}
+
+.chat-list-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px 12px;
+  border-bottom: 2px solid #000;
+}
+
+.chat-list-title,
+.chat-main-title,
+.chat-empty-title {
+  margin: 0;
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.5;
+  color: var(--city-yellow);
+  -webkit-font-smoothing: none;
+}
+
+.chat-list-items {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.chat-list-item {
+  display: flex;
+  align-items: stretch;
+  border-left: 3px solid transparent;
+}
+
+.chat-list-item-active {
+  border-left-color: var(--city-gold);
+  background: #2e2c55;
+}
+
+.app-city .chat-screen .chat-list-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 8px;
+  line-height: 1.6;
+  color: var(--city-cream);
+  background: transparent;
+  border: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-city .chat-screen .chat-list-open:hover {
+  color: var(--city-yellow);
+}
+
+.chat-list-running {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  background: var(--city-green);
+}
+
+.app-city .chat-screen .chat-list-delete {
+  flex: none;
+  padding: 4px 10px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  opacity: 0;
+}
+
+.chat-list-item:hover .chat-list-delete,
+.chat-list-item-active .chat-list-delete,
+.app-city .chat-screen .chat-list-delete:focus-visible {
+  opacity: 1;
+}
+
+.app-city .chat-screen .chat-list-delete:hover {
+  color: var(--danger);
+}
+
+/* ---- Conversation ---- */
+
+.chat-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Never scroll the page sideways; clip keeps the popovers visible above. */
+  overflow-x: clip;
+}
+
+.chat-main-header {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 14px 20px 12px;
+  border-bottom: 2px solid #000;
+}
+
+.chat-main-title {
+  flex: 1 1 200px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keep the reading column the same width as the agent chat panel. */
+.app-city .chat-main .transcript {
+  width: min(780px, 100%);
+  margin: 0 auto;
+  padding-top: 16px;
+}
+
+.app-city .chat-main .composer {
+  flex: none;
+}
+
+.app-city .chat-main .composer > label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.app-city .chat-main .composer-box {
+  width: min(780px, 100%);
+  margin: 0 auto;
+}
+
+.chat-main-loading,
+.chat-main-alert {
+  margin: 12px 20px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
+.chat-main-loading {
+  flex: 1;
+  color: var(--text-muted);
+}
+
+.chat-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Markdown headings in replies: same sizes as in the dialogs. */
+.app-city .chat-screen .md h1 { font-size: 20px; }
+.app-city .chat-screen .md h2 { font-size: 18px; }
+.app-city .chat-screen .md h3 { font-size: 16px; }
+.app-city .chat-screen .md h4 { font-size: 15px; }
+
+/* "Stopped." / "Interrupted …" notes. */
+.app-city .transcript-note {
+  font-size: 13px;
+  font-style: italic;
+  color: #a9a6c4;
+}
+
+/* ---- Composer toolbar (chat only) ----
+ * The settings bar sits in the shared `.composer-actions` row: let it wrap,
+ * drop the keyboard hint, keep the selects readable and the pickers as
+ * compact pills, with Send/Stop at the end. */
+
+.app-city .chat-screen .composer-actions {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.app-city .chat-screen .composer-hint {
+  display: none;
+}
+
+.app-city .chat-screen .composer-actions > button[type='submit'],
+.app-city .chat-screen .composer-actions > .composer-stop {
+  flex: none;
+  margin-left: auto;
+}
+
+.app-city .chat-screen .composer-stop {
+  background: #d9645a;
+  border-color: #ffb3aa;
+  color: #2a0800;
+}
+
+.chat-settings-bar {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.app-city .chat-screen .chat-settings-bar select {
+  width: auto;
+  min-width: 96px;
+  max-width: 160px;
+  padding: 4px 8px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text);
+  background: #1a1834;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.app-city .chat-screen .chat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 180px;
+  padding: 4px 10px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-city .chat-screen .chat-pill:hover:not(:disabled),
+.app-city .chat-screen .chat-pill[aria-expanded='true'] {
+  border-color: var(--city-yellow);
+}
+
+.app-city .chat-screen .chat-pill:active:not(:disabled) {
+  border-style: solid;
+}
+
+/* STE switch: a small track and knob inside the pill. */
+.chat-switch-track {
+  position: relative;
+  width: 22px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background 0.15s;
+}
+.chat-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text);
+  transition: transform 0.15s;
+}
+.app-city .chat-screen .chat-switch[aria-checked='true'] { border-color: var(--city-yellow); }
+.chat-switch[aria-checked='true'] .chat-switch-track { background: var(--city-yellow); }
+.chat-switch[aria-checked='true'] .chat-switch-track::after { transform: translateX(10px); background: #1a1830; }
+
+.chat-popover-anchor {
+  position: relative;
+  min-width: 0;
+}
+
+.chat-popover,
+.chat-folder-picker {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 260px;
+  max-width: min(360px, calc(100vw - 32px));
+  max-height: min(60vh, 400px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: var(--surface, #1c1b2e);
+  border: 1px solid var(--border, #3a3858);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.chat-connector-list,
+.chat-folder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.chat-connector-list li {
+  padding: 3px 0;
+}
+
+/* Checkbox inline, left of its label (overrides the global full-width inputs). */
+.app-city .chat-screen .chat-connector-list label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.app-city .chat-screen .chat-connector-list input {
+  width: auto;
+  margin: 0;
+  flex: none;
+}
+
+.chat-connector-list small {
+  display: block;
+  margin-left: 22px;
+  color: var(--text-muted);
+}
+
+.chat-folder-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.app-city .chat-screen .chat-folder-row input {
+  flex: 1 1 140px;
+  width: auto;
+  min-width: 0;
+}
+
+.chat-folder-current {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.visual-block { margin: 8px 0; }
+.visual-frame { width: 100%; border: 1px solid var(--border, #3a3858); border-radius: 6px; background: #fff; }
+.visual-actions { display: flex; gap: 8px; margin-top: 4px; }
+.app-city .chat-screen .visual-toggle {
+  padding: 2px 8px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  -webkit-font-smoothing: antialiased;
+}
+.app-city .chat-screen .visual-toggle:hover { color: var(--text); border-color: var(--city-yellow); }
+.app-city .chat-screen .visual-toggle:active:not(:disabled) { border-style: solid; }
+.file-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.file-image img { max-width: 240px; max-height: 180px; border-radius: 6px; border: 1px solid var(--border, #3a3858); }
+.file-chip > a { display: inline-block; padding: 4px 10px; border: 1px solid var(--border, #3a3858); border-radius: 12px; }
+.file-chip .visual-frame { display: block; margin-top: 6px; min-width: 320px; }
+
+/* Weather card: a ```weather block in a chat reply (WeatherCard.jsx). */
+.weather-card {
+  margin: 10px 0;
+  border: 1px solid var(--border, #3a3858);
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(160deg, #3d4a6b 0%, #2b3150 100%);
+  color: #eef1fa;
+  max-width: 720px;
+}
+.weather-now { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding: 20px 22px 16px; }
+.weather-place { margin: 0; font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.75; }
+.weather-temp { margin: 2px 0 0; font-size: 3.2rem; line-height: 1; font-weight: 300; }
+.weather-summary { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.weather-summary .weather-icon { font-size: 2rem; }
+.weather-source { font-size: 0.72rem; opacity: 0.6; }
+.weather-days {
+  display: flex; margin: 0; padding: 0; list-style: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.15);
+  overflow-x: auto;
+}
+.weather-day {
+  flex: 1 0 64px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 4px; font-size: 0.85rem;
+}
+.weather-day + .weather-day { border-left: 1px solid rgba(255, 255, 255, 0.08); }
+.weather-day-name { opacity: 0.7; }
+.weather-day .weather-icon { font-size: 1.2rem; }
+.weather-low { opacity: 0.6; }
+.weather-rain { font-size: 0.75rem; color: #9cc4ff; }
+.weather-rain::before { content: '💧'; font-size: 0.65rem; margin-right: 2px; }
+
+.chat-main-header .token-meter { width: 220px; margin: 0; }

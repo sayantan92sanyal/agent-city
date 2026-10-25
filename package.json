@@ -1,0 +1,23 @@
+{
+  "name": "agent-control-panel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent City: a local web app for running, chatting with and creating Claude Code subagents across your projects, plus a general Claude chat.",
+  "scripts": {
+    "postinstall": "npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently --kill-others-on-fail --names server,client --prefix-colors blue,magenta \"npm --prefix server start\" \"npm --prefix client run dev\"",
+    "test": "npm --prefix server test && npm --prefix client test",
+    "build": "npm --prefix client run build",
+    "service:install": "scripts/agent-city-service.sh install",
+    "service:restart": "scripts/agent-city-service.sh restart",
+    "service:status": "scripts/agent-city-service.sh status",
+    "service:uninstall": "scripts/agent-city-service.sh uninstall"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}

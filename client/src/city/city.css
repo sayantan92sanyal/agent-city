@@ -1,0 +1,1348 @@
+/* Agent City — a self-contained "game screen" with its own fixed palette
+ * (it reads the same in light and dark system themes). Pixel look: the
+ * Press Start 2P font, hard 2–4px borders, no gradients or soft shadows
+ * except the subtle grass texture. */
+
+.app.app-city {
+  --city-ink: #111;
+  --city-hud: #1d1b3a;
+  --city-yellow: #ffe14d;
+  --city-cyan: #9ef;
+  --city-green: #7f7;
+  --city-gold: #e8b830;
+  --city-wood: #a0662b;
+  --city-wood-dark: #4a2a0a;
+  --city-cream: #fff6d0;
+  --city-grass: #4f9a37;
+
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.6;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+.app-city button,
+.app-city input,
+.app-city select,
+.app-city textarea {
+  font-family: inherit;
+}
+
+/* ---- Dialogs: game-styled dark boxes with readable body text ----
+ * The pixel font stays on headings and buttons; body copy and form fields
+ * use a clean monospace at >= 12px (transcripts use a reading font, below). The theme tokens are
+ * redefined here so the dialogs look the same in light and dark mode. */
+
+.app-city .modal,
+.app-city .panel {
+  --surface: #262447;
+  --surface-muted: #2e2c55;
+  --text: #fff6d0;
+  --text-muted: #c9c3a6;
+  --border: #6b6890;
+  --accent: #e8b830;
+  --accent-text: #2a1a00;
+  --danger: #ff8a80;
+  --user-bubble: #2a3a66;
+  --agent-bubble: #2e2c55;
+
+  background: var(--city-hud);
+  color: var(--text);
+  border: 4px solid var(--city-ink);
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #000;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: auto;
+}
+
+.app-city .modal h2,
+.app-city .panel h2 {
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.5;
+  color: var(--city-yellow);
+  -webkit-font-smoothing: none;
+}
+
+.app-city .modal label,
+.app-city .panel label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.app-city .modal input,
+.app-city .modal select,
+.app-city .modal textarea,
+.app-city .panel input,
+.app-city .panel select,
+.app-city .panel textarea {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 14px;
+  background: #000;
+  color: var(--text);
+  border: 2px solid var(--border);
+  border-radius: 0;
+}
+
+.app-city .modal input:focus-visible,
+.app-city .modal select:focus-visible,
+.app-city .modal textarea:focus-visible,
+.app-city .panel input:focus-visible,
+.app-city .panel select:focus-visible,
+.app-city .panel textarea:focus-visible {
+  outline: 3px solid var(--city-yellow);
+  outline-offset: 0;
+}
+
+.app-city .modal button,
+.app-city .panel button {
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 0;
+  border: 3px outset #dde;
+  background: #9aa;
+  color: var(--city-ink);
+  -webkit-font-smoothing: none;
+}
+
+.app-city .modal button[type='submit'],
+.app-city .panel button[type='submit'] {
+  background: var(--city-gold);
+  border-color: #fff3a0;
+  color: #2a1a00;
+}
+
+.app-city .modal button:active:not(:disabled),
+.app-city .panel button:active:not(:disabled) {
+  border-style: inset;
+}
+
+/* "Remove <path>" carries a whole path; keep it in the readable font. */
+.app-city .settings-roots-list li {
+  border-radius: 0;
+}
+
+.app-city .settings-roots-list button {
+  flex: none;
+  max-width: 50%;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Icon rail: switches between the City and Chat views ---- */
+
+.app-rail {
+  flex: none;
+  width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  background: #0d0c1f;
+  border-right: 4px solid var(--city-ink);
+  position: relative;
+  z-index: 50;
+}
+
+.app-city .app-rail-btn {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--city-cream);
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.app-city .app-rail-btn:hover {
+  border-color: #6b6890;
+}
+
+.app-city .app-rail-btn[aria-pressed='true'] {
+  border-color: var(--city-gold);
+  color: var(--city-gold);
+}
+
+.app-city .app-rail-btn:focus-visible {
+  outline: 3px solid var(--city-yellow);
+  outline-offset: 0;
+}
+
+/* Pixel-font tooltip to the right of each rail icon. */
+.app-city .app-rail-btn::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 6px;
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  font-size: 8px;
+  white-space: nowrap;
+  color: var(--city-yellow);
+  background: var(--city-hud);
+  border: 2px solid var(--city-ink);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.app-city .app-rail-btn:hover::after,
+.app-city .app-rail-btn:focus-visible::after {
+  opacity: 1;
+}
+
+/* The active view fills the rest of the screen; the HUD sits above the
+ * City view only. */
+.app-view {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- HUD ---- */
+
+.city-hud {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 10px 12px;
+  background: var(--city-hud);
+  color: var(--city-yellow);
+  border-bottom: 4px solid var(--city-ink);
+}
+
+.city-hud-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: normal;
+  letter-spacing: 1px;
+  color: var(--city-yellow);
+  text-shadow: 2px 2px 0 #000;
+}
+
+.city-hud-stat {
+  padding: 6px 8px;
+  background: #000;
+  color: var(--city-cyan);
+  border: 2px solid #555;
+  white-space: nowrap;
+}
+
+.city-hud-stat-working {
+  color: var(--city-green);
+}
+
+.city-hud-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.app-city .city-hud-btn {
+  padding: 7px 10px;
+  border-radius: 0;
+  background: #9aa;
+  color: var(--city-ink);
+  border: 3px outset #dde;
+  font-size: 10px;
+}
+
+.app-city .city-hud-btn-primary {
+  background: var(--city-gold);
+  color: #2a1a00;
+  border-color: #fff3a0;
+}
+
+.app-city .city-hud-btn:hover:not(:disabled) {
+  border-color: #fff;
+  filter: brightness(1.1);
+}
+
+.app-city .city-hud-btn:active:not(:disabled) {
+  border-style: inset;
+}
+
+.app-city .city-hud-btn:focus-visible {
+  outline: 3px solid var(--city-yellow);
+  outline-offset: 2px;
+}
+
+.city-banner {
+  margin: 0;
+  padding: 8px 12px;
+  background: #000;
+  border-bottom: 4px solid var(--city-ink);
+  color: var(--city-cream);
+}
+
+.city-banner.app-error {
+  color: #ff8080;
+}
+
+/* ---- Map ---- */
+
+.city-viewport {
+  /* Own stacking context: the map's depth z-indexes (10 + screen top) stay
+   * inside it, so dialog overlays (z-index 100) always cover the map. */
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: auto;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.06) 0 4px, transparent 4px 8px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.06) 0 4px, transparent 4px 8px),
+    var(--city-grass);
+  image-rendering: pixelated;
+}
+
+.city-map {
+  position: relative;
+  flex: none;
+  margin: auto;
+}
+
+.city-ground,
+.city-links {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.city-ground {
+  z-index: 0;
+}
+
+.city-links {
+  z-index: 1;
+}
+
+.city-plaza {
+  fill: #b9b2a0;
+  stroke: #5a4a3a;
+  stroke-width: 3;
+}
+
+.city-plaza-joint line {
+  stroke: #a39c88;
+  stroke-width: 2;
+}
+
+.city-plot-dirt {
+  fill: #7a4a1c;
+}
+
+.city-plot-lawn {
+  fill: #7cc154;
+}
+
+.city-fence-rail {
+  fill: none;
+  stroke: #6b3f1d;
+  stroke-width: 3;
+}
+
+.city-fence rect {
+  fill: var(--city-wood-dark);
+}
+
+.city-lot {
+  fill: #a07a45;
+}
+
+.city-lot-edge {
+  fill: none;
+  stroke: #3a2208;
+  stroke-width: 3;
+  stroke-dasharray: 8 6;
+}
+
+.city-link-shadow {
+  stroke: #000;
+  stroke-width: 7;
+  stroke-dasharray: 10 8;
+  stroke-opacity: 0.55;
+}
+
+.city-link,
+.city-link-shadow {
+  animation: city-march 0.6s steps(3) infinite;
+}
+
+@keyframes city-march {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
+/* Upright things: anchored at their base point (left/top), standing up. */
+.city-item {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -100%);
+}
+
+.app-city .city-map button.city-item {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.app-city .city-map button.city-item:focus-visible {
+  outline: 3px solid var(--city-yellow);
+  outline-offset: 2px;
+}
+
+/* Wooden signs. */
+.city-board {
+  display: block;
+  padding: 6px 8px;
+  background: var(--city-wood);
+  color: var(--city-cream);
+  border: 3px solid var(--city-wood-dark);
+  white-space: nowrap;
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.city-posts,
+.city-post {
+  display: block;
+  height: 10px;
+}
+
+.city-posts {
+  width: 60%;
+  min-width: 24px;
+  border-left: 4px solid var(--city-wood-dark);
+  border-right: 4px solid var(--city-wood-dark);
+}
+
+.city-post {
+  width: 4px;
+  height: 14px;
+  background: var(--city-wood-dark);
+}
+
+.city-plot-sign .city-posts {
+  height: 44px;
+}
+
+.city-sign-text {
+  display: block;
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-hire-board {
+  background: var(--city-gold);
+  color: #2a1a00;
+  border-color: #6b4a00;
+  font-size: 8px;
+  padding: 4px 6px;
+}
+
+.city-map button.city-hire:hover .city-hire-board,
+.city-map button.city-lot-sign:hover .city-lot-board {
+  background: #ffd84a;
+}
+
+.city-lot-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--city-cream);
+  color: #3a2a00;
+  border-color: #3a2208;
+}
+
+.city-lot-title {
+  color: #b33;
+}
+
+.city-lot-cta {
+  font-size: 8px;
+}
+
+/* Characters. */
+.city-agent {
+  width: 64px;
+}
+
+.city-figure {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 54px;
+}
+
+.city-figure svg[data-testid='agent-sprite'],
+.city-figure svg[data-testid='mayor-sprite'] {
+  display: block;
+  width: 48px;
+  height: 54px;
+  image-rendering: pixelated;
+}
+
+.city-desk {
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+}
+
+.city-desk svg {
+  display: block;
+  width: 48px;
+  height: 30px;
+}
+
+.city-agent[data-status='idle'] .city-figure {
+  animation: city-bob 1.2s steps(1, end) infinite;
+  animation-delay: var(--bob-delay, 0s);
+}
+
+@keyframes city-bob {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.city-name {
+  display: block;
+  max-width: min(12ch, 64px);
+  margin-top: 2px;
+  padding: 3px 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 7px;
+  line-height: 1.2;
+}
+
+.city-name-mayor {
+  color: var(--city-yellow);
+}
+
+.city-map button.city-agent:hover .city-name,
+.city-map button.city-broken:hover .city-name {
+  background: #000;
+  color: var(--city-yellow);
+}
+
+/* Speech bubbles hang off the upper-right of the head, where the iso grid
+ * leaves room, instead of straight up over the character behind. */
+.city-bubble {
+  position: absolute;
+  z-index: 1;
+  top: -8px;
+  left: 50px;
+  padding: 4px 5px;
+  background: #fff;
+  color: var(--city-ink);
+  border: 2px solid var(--city-ink);
+  white-space: nowrap;
+  font-size: 7px;
+  line-height: 1.2;
+}
+
+.city-bubble-work {
+  background: #c9ff9a;
+}
+
+/* Broken agent file: a "?" sign. */
+.city-broken-board {
+  min-width: 32px;
+  text-align: center;
+  font-size: 16px;
+  padding: 6px 8px 4px;
+  background: #c9c2b0;
+  color: #b33;
+  border-color: #555;
+}
+
+.city-broken .city-posts {
+  border-color: #555;
+}
+
+/* Town hall (decorative; the Mayor button stands in front of it). */
+.city-hall {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+
+.city-hall-sign {
+  display: block;
+  margin-bottom: 4px;
+  padding: 4px 6px;
+  background: var(--city-wood);
+  color: var(--city-cream);
+  border: 3px solid var(--city-wood-dark);
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.city-hall-flag {
+  display: block;
+  width: 4px;
+  height: 16px;
+  background: #333;
+  position: relative;
+}
+
+.city-hall-flag::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0;
+  width: 14px;
+  height: 8px;
+  background: var(--city-yellow);
+  border: 2px solid var(--city-ink);
+}
+
+.city-hall-roof {
+  display: block;
+  width: 0;
+  height: 0;
+  border-left: 74px solid transparent;
+  border-right: 74px solid transparent;
+  border-bottom: 40px solid #b33;
+}
+
+.city-hall-body {
+  position: relative;
+  display: block;
+  width: 124px;
+  height: 64px;
+  background: #efe6cf;
+  border: 3px solid #5a4a3a;
+}
+
+.city-hall-body::before,
+.city-hall-body::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  width: 8px;
+  height: 46px;
+  background: #cfc6af;
+  border: 2px solid #5a4a3a;
+}
+
+.city-hall-body::before {
+  left: 14px;
+}
+
+.city-hall-body::after {
+  right: 14px;
+}
+
+.city-hall-door {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 30px;
+  background: #6b3f1d;
+  border: 2px solid #3a2208;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .city-agent[data-status='idle'] .city-figure,
+  .city-link,
+  .city-link-shadow {
+    animation: none;
+  }
+}
+
+/* ---- Agent / playground dialogs ---- */
+.app-city .agent-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app-city .agent-dialog-sprite {
+  width: 64px;
+  height: 64px;
+  flex: none;
+}
+
+.app-city .agent-dialog-status {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+}
+
+.app-city .agent-dialog-status.status-working {
+  color: var(--accent);
+}
+
+.app-city .agent-dialog-status.status-idle {
+  color: var(--text-muted);
+}
+
+.app-city .agent-dialog-description,
+.app-city .agent-dialog-file {
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.app-city .modal .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+}
+
+.app-city .modal .checkbox-label input {
+  width: auto;
+}
+
+/* ---- Conversation: Claude-style reading layout ----
+ * Transcripts drop the monospace for a proportional reading font: the user's
+ * turns are bubbles on the right, replies are formatted Markdown on the
+ * panel itself. The pixel font stays only on the dialog chrome. */
+
+.app-city .chat-panel,
+.app-city .one-off-panel {
+  width: min(780px, 100%);
+  padding: 16px 0 0;
+}
+
+.app-city .chat-panel > .panel-header,
+.app-city .one-off-panel > .panel-header,
+.app-city .chat-panel > .mayor-waiting,
+.app-city .chat-panel > .form-error,
+.app-city .one-off-panel > .form-error {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+.app-city .transcript {
+  --reading-font: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--reading-font);
+  font-size: 15px;
+  line-height: 1.65;
+  color: #ecebe4;
+  gap: 18px;
+  padding: 8px 20px 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-city .transcript-entry {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  white-space: normal;
+}
+
+.app-city .transcript-speaker {
+  font-family: var(--reading-font);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--city-yellow);
+  margin-bottom: 4px;
+}
+
+.app-city .transcript-user {
+  align-self: flex-end;
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 16px 16px 4px 16px;
+  background: #34325e;
+  white-space: pre-wrap;
+}
+
+.app-city .transcript-bridge {
+  padding: 10px 14px;
+  border-left: 3px solid var(--city-yellow);
+  background: rgba(255, 225, 77, 0.06);
+  border-radius: 0 8px 8px 0;
+}
+
+.app-city .transcript-tool,
+.app-city .transcript-status {
+  font-size: 13px;
+  color: #a9a6c4;
+}
+
+.app-city .transcript-tool::before {
+  content: '⚙ ';
+}
+
+.app-city .transcript-status {
+  animation: transcript-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes transcript-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-city .transcript-status {
+    animation: none;
+  }
+}
+
+.app-city .transcript-error {
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.transcript-end {
+  list-style: none;
+  height: 0;
+}
+
+/* Markdown inside replies */
+.md > :first-child {
+  margin-top: 0;
+}
+
+.md > :last-child {
+  margin-bottom: 0;
+}
+
+.md p,
+.md ul,
+.md ol,
+.md blockquote,
+.md pre,
+.md .md-table-wrap {
+  margin: 0 0 12px;
+}
+
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  font-family: inherit;
+  color: #fff;
+  line-height: 1.35;
+  margin: 20px 0 8px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-city .panel .md h1 { font-size: 20px; }
+.app-city .panel .md h2 { font-size: 18px; }
+.app-city .panel .md h3 { font-size: 16px; }
+.app-city .panel .md h4 { font-size: 15px; }
+
+.md strong {
+  color: #fff;
+  font-weight: 650;
+}
+
+.md ul,
+.md ol {
+  padding-left: 22px;
+}
+
+.md li + li {
+  margin-top: 4px;
+}
+
+.md li > p {
+  margin: 0;
+}
+
+.md a {
+  color: #9ecbff;
+}
+
+.md code {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.md pre {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #121124;
+  border: 1px solid #3b395f;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.md pre code {
+  padding: 0;
+  background: none;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.md blockquote {
+  padding-left: 12px;
+  border-left: 3px solid #5a5880;
+  color: #c9c6dd;
+}
+
+.md hr {
+  border: 0;
+  border-top: 1px solid #3b395f;
+  margin: 16px 0;
+}
+
+.md-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #3b395f;
+  border-radius: 8px;
+}
+
+.md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.md th,
+.md td {
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #3b395f;
+}
+
+.md th {
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.md tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Attachments shown in a sent message */
+.attachment-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.attachment-image img {
+  display: block;
+  max-width: 220px;
+  max-height: 160px;
+  border-radius: 10px;
+  border: 1px solid #5a5880;
+  object-fit: cover;
+}
+
+.attachment-file-name {
+  display: inline-block;
+  max-width: 240px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Composer ---- */
+
+.app-city .composer {
+  position: relative;
+  margin: 0;
+  padding: 12px 20px 16px;
+  border-top: 2px solid #000;
+  background: var(--city-hud);
+}
+
+.app-city .agent-dialog .composer {
+  padding: 12px 0 0;
+  border-top: 0;
+  background: transparent;
+}
+
+.app-city .composer > label {
+  display: block;
+  margin: 0 0 6px;
+}
+
+.composer-box {
+  border: 2px solid var(--border, #6b6890);
+  border-radius: 14px;
+  background: #121124;
+  padding: 8px 10px 6px;
+}
+
+.composer-dragging .composer-box,
+.composer-box:focus-within {
+  border-color: var(--city-yellow);
+}
+
+.app-city .composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 24px;
+  max-height: 220px;
+  resize: none;
+  overflow-y: auto;
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: #ecebe4;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.app-city .composer textarea:focus-visible {
+  outline: none;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.app-city .composer .composer-attach {
+  padding: 4px 8px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+}
+
+.app-city .composer .composer-attach:hover {
+  border-color: var(--border, #6b6890);
+}
+
+.composer-hint {
+  margin-right: auto;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  color: #8f8cab;
+}
+
+.composer-files {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.composer-file {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  padding: 4px 26px 4px 4px;
+  border-radius: 10px;
+  background: #2a2850;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+}
+
+.composer-file img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.composer-file-icon {
+  font-size: 20px;
+  padding: 4px;
+}
+
+.composer-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-city .composer .composer-file-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 0 6px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  background: transparent;
+  border: 0;
+  color: #c9c6dd;
+}
+
+.composer-error {
+  margin: 6px 0 0;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+}
+
+.composer-drop-hint {
+  position: absolute;
+  inset: 4px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--city-yellow);
+  border-radius: 14px;
+  background: rgba(29, 27, 58, 0.92);
+  color: var(--city-yellow);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+/* An unread task result: a gold bubble, distinct from working (green) and
+ * idle (white) by text as well as colour. */
+.city-bubble-done {
+  background: var(--city-gold);
+  color: #2a1a00;
+}
+
+/* ---- Recent tasks in the agent dialog ---- */
+
+.app-city .agent-tasks {
+  margin-top: 14px;
+}
+
+.app-city .agent-tasks h3 {
+  margin: 0 0 6px;
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: normal;
+  color: var(--city-yellow);
+}
+
+.app-city .agent-tasks ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-city .modal button.agent-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+  background: #121124;
+  border: 2px solid #3b395f;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-city .modal button.agent-task:hover {
+  border-color: var(--city-yellow);
+}
+
+.agent-task-status {
+  flex: none;
+  min-width: 58px;
+  padding: 2px 5px;
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  font-size: 7px;
+  text-align: center;
+  color: var(--city-ink);
+  -webkit-font-smoothing: none;
+}
+
+.agent-task-running { background: #c9ff9a; }
+.agent-task-done { background: var(--city-cyan); }
+.agent-task-failed { background: #ff8a80; }
+
+.agent-task-message {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-task-time {
+  flex: none;
+  font-size: 12px;
+  color: #8f8cab;
+}
+
+.agent-task-new {
+  flex: none;
+  padding: 2px 5px;
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  font-size: 7px;
+  background: var(--city-gold);
+  color: #2a1a00;
+}
+
+/* Shown when the server runs a newer build than this window (UpdateBar.jsx). */
+.update-bar {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 10px 8px 16px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text, #eef1fa);
+  background: #0d0c1f;
+  border: 2px solid var(--city-yellow);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+.update-bar button {
+  padding: 4px 12px;
+  font: inherit;
+  font-weight: 600;
+  color: #1a1830;
+  background: var(--city-yellow);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Draft / Improve with Claude (CreateAgentModal.jsx, ImproveAgentPanel.jsx). */
+.app-city .draft-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 2px 0 8px;
+}
+.app-city .draft-row small {
+  flex: 1 1 200px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--text-muted, #a9a6c9);
+}
+.app-city .modal textarea.agent-instructions {
+  min-height: 200px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.app-city .create-agent-modal {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.app-city .improve-agent {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.app-city .improve-agent textarea,
+.app-city .improve-agent input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Delete: a small ✕ on each playground sign, and red confirm buttons. */
+.city-plot-sign .city-board {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.city-sign-delete {
+  pointer-events: auto;
+  padding: 1px 4px;
+  font: inherit;
+  font-size: 9px;
+  line-height: 1.3;
+  color: var(--city-cream);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--city-wood-dark);
+  cursor: pointer;
+  opacity: 0.85;
+}
+.city-sign-delete:hover,
+.city-sign-delete:focus-visible {
+  opacity: 1;
+  color: #fff;
+  background: #a33a3a;
+  border-color: #5a1515;
+}
+.app-city .modal button.danger {
+  background: #a33a3a;
+  color: #fff;
+  border-color: #5a1515;
+}
+.app-city .agent-delete-confirm p {
+  margin: 8px 0;
+}
