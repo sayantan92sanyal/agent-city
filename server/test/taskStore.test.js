@@ -8,7 +8,8 @@ vi.mock('../src/sessionManager.js', () => ({
   runOneOff: (...args) => runOneOffMock(...args),
 }));
 
-const { startTask, getTask, listTasks, markTaskSeen, unseenTaskCounts } = await import('../src/taskStore.js');
+const { startTask, continueTask, getTask, listTasks, markTaskSeen, unseenTaskCounts, TaskBusyError, NoFollowUpError } =
+  await import('../src/taskStore.js');
 
 const agent = { id: '/p::writer', name: 'writer' };
 const ok = [{ type: 'result', result: 'all done', is_error: false }];
@@ -24,7 +25,7 @@ test('a task is saved as running at once, and its result is saved when the run e
   const { task, finished } = startTask(agent, 'write it', []);
 
   expect(getTask(task.id)).toMatchObject({ status: 'running', agentId: agent.id, message: 'write it', seen: false });
-  expect(runOneOffMock).toHaveBeenCalledWith(agent, 'write it', []);
+  expect(runOneOffMock).toHaveBeenCalledWith(agent, 'write it', [], { sessionId: expect.any(String), resume: false });
 
   finish(ok);
   await finished;
@@ -83,4 +84,52 @@ test('a task left "running" by a previous server process reads as failed', () =>
 test('getTask and markTaskSeen refuse ids that are not uuids', () => {
   expect(getTask('../config')).toBeNull();
   expect(markTaskSeen('../config')).toBeNull();
+});
+
+test('a follow-up resumes the task session and adds its reply after the first one', async () => {
+  runOneOffMock.mockResolvedValueOnce(ok);
+  const first = startTask(agent, 'write it');
+  await first.finished;
+  markTaskSeen(first.task.id);
+  const { sessionId } = getTask(first.task.id);
+
+  const reply = [{ type: 'result', result: 'shorter now', is_error: false }];
+  let finish;
+  runOneOffMock.mockReturnValueOnce(new Promise((r) => (finish = r)));
+  const next = continueTask(agent, first.task.id, 'make it shorter');
+
+  expect(runOneOffMock).toHaveBeenLastCalledWith(agent, 'make it shorter', [], { sessionId, resume: true });
+  expect(getTask(first.task.id)).toMatchObject({
+    status: 'running',
+    transcript: ok,
+    pending: { type: 'user_message', text: 'make it shorter' },
+  });
+
+  finish(reply);
+  await next.finished;
+  const done = getTask(first.task.id);
+  expect(done).toMatchObject({ status: 'done', transcript: [...ok, ...reply], seen: false, message: 'write it' });
+  expect(done.pending).toBeUndefined();
+});
+
+test('a failed follow-up keeps the earlier transcript', async () => {
+  runOneOffMock.mockResolvedValueOnce(ok);
+  const first = startTask(agent, 'write it');
+  await first.finished;
+  runOneOffMock.mockRejectedValueOnce(new Error('spawn failed'));
+  await continueTask(agent, first.task.id, 'again').finished;
+  expect(getTask(first.task.id)).toMatchObject({ status: 'failed', transcript: ok, error: 'spawn failed' });
+});
+
+test('continueTask refuses running tasks, tasks without a session, and unknown ids', async () => {
+  runOneOffMock.mockReturnValue(new Promise(() => {}));
+  const running = startTask(agent, 'slow');
+  expect(() => continueTask(agent, running.task.id, 'hi')).toThrow(TaskBusyError);
+
+  const id = '22222222-2222-2222-2222-222222222222';
+  const dir = join(process.env.AGENT_PANEL_HOME, 'tasks');
+  writeFileSync(join(dir, `${id}.json`), JSON.stringify({ id, agentId: agent.id, status: 'done', startedAt: 'x', seen: true, transcript: ok }));
+  expect(() => continueTask(agent, id, 'hi')).toThrow(NoFollowUpError);
+
+  expect(continueTask(agent, '33333333-3333-3333-3333-333333333333', 'hi')).toBeNull();
 });

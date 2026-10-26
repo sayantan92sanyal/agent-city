@@ -71,33 +71,35 @@ export function summarize({ transcript: _transcript, ...summary }) {
   return summary;
 }
 
-/**
- * Starts a one-off task for `agent` in the background and returns its
- * `running` record straight away. `finished` resolves once the run is over
- * and the record is saved (tests wait on it; routes don't).
- */
-export function startTask(agent, message, attachments = []) {
-  const task = {
-    id: randomUUID(),
-    agentId: agent.id,
-    agentName: agent.name,
-    message,
-    attachments,
-    status: 'running',
-    startedAt: new Date().toISOString(),
-    seen: false,
-  };
+export class TaskBusyError extends Error {
+  constructor() {
+    super('This task is still running. Wait for it to finish, then send your follow-up.');
+    this.name = 'TaskBusyError';
+  }
+}
+
+export class NoFollowUpError extends Error {
+  constructor() {
+    super('This task ran before follow-ups were possible, so it cannot take one. Give the agent a new task instead.');
+    this.name = 'NoFollowUpError';
+  }
+}
+
+// Runs one turn of `task` in the background, saving the record as running
+// and then with the turn's events added to `earlier`.
+function runTurn(agent, task, earlier, message, attachments, resume) {
   save(task);
   live.add(task.id);
 
-  const finished = runOneOff(agent, message, attachments)
-    .then((transcript) => {
-      const outcome = finalReply(transcript);
-      return { status: 'error' in outcome ? 'failed' : 'done', transcript, error: outcome.error };
+  const finished = runOneOff(agent, message, attachments, { sessionId: task.sessionId, resume })
+    .then((events) => {
+      const outcome = finalReply(events);
+      return { status: 'error' in outcome ? 'failed' : 'done', transcript: [...earlier, ...events], error: outcome.error };
     })
-    .catch((err) => ({ status: 'failed', transcript: [], error: err instanceof Error ? err.message : String(err) }))
+    .catch((err) => ({ status: 'failed', transcript: earlier, error: err instanceof Error ? err.message : String(err) }))
     .then((result) => {
-      const done = { ...task, ...result, finishedAt: new Date().toISOString() };
+      const { pending: _pending, ...rest } = task;
+      const done = { ...rest, ...result, finishedAt: new Date().toISOString() };
       if (done.error === undefined) delete done.error;
       save(done);
       live.delete(task.id);
@@ -105,6 +107,46 @@ export function startTask(agent, message, attachments = []) {
     });
 
   return { task, finished };
+}
+
+/**
+ * Starts a one-off task for `agent` in the background and returns its
+ * `running` record straight away. `finished` resolves once the run is over
+ * and the record is saved (tests wait on it; routes don't). The task gets its
+ * own Claude session, so it can take follow-ups later.
+ */
+export function startTask(agent, message, attachments = []) {
+  const task = {
+    id: randomUUID(),
+    agentId: agent.id,
+    agentName: agent.name,
+    sessionId: randomUUID(),
+    message,
+    attachments,
+    status: 'running',
+    startedAt: new Date().toISOString(),
+    seen: false,
+  };
+  return runTurn(agent, task, [], message, attachments, false);
+}
+
+/**
+ * Sends a follow-up message to a finished task, resuming its Claude session.
+ * The record is running again until the reply is saved after the earlier
+ * transcript; `pending` holds the follow-up meanwhile. Returns null for an
+ * unknown task.
+ */
+export function continueTask(agent, id, message, attachments = []) {
+  const existing = load(id);
+  if (!existing) return null;
+  if (existing.status === 'running') throw new TaskBusyError();
+  if (!existing.sessionId) throw new NoFollowUpError();
+
+  const { error: _error, finishedAt: _finishedAt, transcript = [], ...rest } = existing;
+  const pending = { type: 'user_message', text: message };
+  if (attachments.length > 0) pending.attachments = attachments;
+  const task = { ...rest, status: 'running', seen: false, pending };
+  return runTurn(agent, { ...task, transcript }, transcript, message, attachments, true);
 }
 
 export function getTask(id) {

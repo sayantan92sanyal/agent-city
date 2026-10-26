@@ -61,3 +61,50 @@ test('closing stops polling', async () => {
   await new Promise((r) => setTimeout(r, 50));
   expect(fetchSpy.mock.calls.length).toBe(calls);
 });
+
+test('a finished task takes a follow-up, shows it while it runs, then shows the reply', async () => {
+  const finished = { ...done, sessionId: 's1', seen: true };
+  const followUp = { type: 'user_message', text: 'and per agent?' };
+  const reply = { type: 'assistant', message: { content: [{ type: 'text', text: 'per agent: fine' }] } };
+  vi.spyOn(api, 'fetchTask')
+    .mockResolvedValueOnce(finished)
+    .mockResolvedValueOnce({ ...finished, status: 'running', pending: followUp })
+    .mockResolvedValue({ ...finished, transcript: [...done.transcript, followUp, reply] });
+  const send = vi.spyOn(api, 'sendTaskFollowUp').mockResolvedValue({ ...finished, status: 'running', pending: followUp, transcript: undefined });
+
+  render(<TaskPanel taskId="t1" pollMs={10} onClose={() => {}} />);
+  await screen.findByText('all done');
+  const box = screen.getByRole('textbox', { name: 'Follow-up' });
+  fireEvent.change(box, { target: { value: 'and per agent?' } });
+  fireEvent.keyDown(box, { key: 'Enter' });
+
+  await waitFor(() => expect(send).toHaveBeenCalledWith('t1', 'and per agent?', []));
+  expect(await screen.findByText('and per agent?')).toBeInTheDocument();
+  expect(screen.getByText('all done')).toBeInTheDocument();
+  expect(await screen.findByText('per agent: fine')).toBeInTheDocument();
+});
+
+test('the follow-up box waits while the task runs, and is hidden for tasks without a session', async () => {
+  vi.spyOn(api, 'fetchTask').mockResolvedValue({ ...running, sessionId: 's1' });
+  const { unmount } = render(<TaskPanel taskId="t1" onClose={() => {}} />);
+  fireEvent.change(await screen.findByRole('textbox', { name: 'Follow-up' }), { target: { value: 'hi' } });
+  expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+  unmount();
+
+  vi.spyOn(api, 'fetchTask').mockResolvedValue({ ...done, seen: true });
+  render(<TaskPanel taskId="t1" onClose={() => {}} />);
+  await screen.findByText('all done');
+  expect(screen.queryByRole('textbox', { name: 'Follow-up' })).toBeNull();
+});
+
+test('a refused follow-up shows the reason and keeps the draft', async () => {
+  vi.spyOn(api, 'fetchTask').mockResolvedValue({ ...done, sessionId: 's1', seen: true });
+  vi.spyOn(api, 'sendTaskFollowUp').mockRejectedValue(new Error('This task is still running.'));
+  render(<TaskPanel taskId="t1" onClose={() => {}} />);
+  await screen.findByText('all done');
+  const box = screen.getByRole('textbox', { name: 'Follow-up' });
+  fireEvent.change(box, { target: { value: 'more please' } });
+  fireEvent.keyDown(box, { key: 'Enter' });
+  expect(await screen.findByRole('alert')).toHaveTextContent('still running');
+  expect(box).toHaveValue('more please');
+});

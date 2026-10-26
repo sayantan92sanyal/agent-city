@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react';
-import { fetchTask, markTaskSeen } from '../api.js';
+import { fetchTask, markTaskSeen, sendTaskFollowUp } from '../api.js';
 import { formatTranscript } from '../transcriptFormat.js';
+import { Composer } from './Composer.jsx';
 import { Transcript } from './Transcript.jsx';
 
 /**
  * Shows one one-off task, which runs on the server whether or not this panel
  * stays open. While the task runs, the panel polls it; once finished, it
  * shows the result and marks it read. Closing the panel loses nothing — the
- * result stays in the agent's task list.
+ * result stays in the agent's task list. A finished task can take follow-up
+ * messages, which continue the same conversation with the agent.
  *
  * @param {{ taskId: string, initialTask?: Object, onClose: () => void, pollMs?: number }} props
  */
 export function TaskPanel({ taskId, initialTask, onClose, pollMs = 2000 }) {
   const [task, setTask] = useState(initialTask ?? null);
   const [error, setError] = useState(null);
+  const [sending, setSending] = useState(false);
+  // Bumped after a follow-up is sent, to start polling again.
+  const [pollRound, setPollRound] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -40,15 +45,38 @@ export function TaskPanel({ taskId, initialTask, onClose, pollMs = 2000 }) {
       active = false;
       clearTimeout(timer);
     };
-  }, [taskId, pollMs]);
+  }, [taskId, pollMs, pollRound]);
+
+  // Resolves false on failure so the Composer gives the draft back.
+  async function handleFollowUp(text, attachments) {
+    if (sending) return false;
+    setSending(true);
+    setError(null);
+    try {
+      const next = await sendTaskFollowUp(taskId, text, attachments);
+      // The answer leaves out the transcript, so keep the one already shown.
+      setTask((current) => ({ ...current, ...next, transcript: current?.transcript }));
+      setPollRound((n) => n + 1);
+      return true;
+    } catch (err) {
+      setError(err?.message || 'Failed to send the follow-up.');
+      return false;
+    } finally {
+      setSending(false);
+    }
+  }
 
   const running = !task || task.status === 'running';
   const userTurn = task ? [{ type: 'user_message', text: task.message, attachments: task.attachments }] : [];
   // A finished transcript starts with the user's message itself.
-  const rows = formatTranscript(task?.transcript?.length ? task.transcript : userTurn);
+  const entries = task?.transcript?.length ? [...task.transcript] : userTurn;
+  if (task?.pending) entries.push(task.pending);
+  const rows = formatTranscript(entries);
   if (task?.status === 'failed' && task.error && !rows.some((row) => row.kind === 'error')) {
     rows.push({ kind: 'error', text: `Error: ${task.error}` });
   }
+  // Tasks from before follow-ups existed have no session to continue.
+  const canFollowUp = Boolean(task?.sessionId);
 
   return (
     <div className="panel-overlay">
@@ -73,6 +101,16 @@ export function TaskPanel({ taskId, initialTask, onClose, pollMs = 2000 }) {
             running ? 'Running… You can close this — the result is saved and the agent shows DONE on the map.' : null
           }
         />
+
+        {canFollowUp && (
+          <Composer
+            id="task-follow-up"
+            label="Follow-up"
+            disabled={running || sending}
+            placeholder="Ask a follow-up…"
+            onSubmit={handleFollowUp}
+          />
+        )}
       </div>
     </div>
   );

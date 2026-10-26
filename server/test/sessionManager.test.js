@@ -317,3 +317,18 @@ test('without attachments the message stays positional and nothing goes to stdin
   expect(args.slice(-2)).toEqual(['--', 'plain']);
   expect(input).toBeUndefined();
 });
+
+test('runOneOff with a session starts it, or resumes it, and keeps it', async () => {
+  runClaudeMock.mockImplementation(() => ({ kill: vi.fn(), done: Promise.resolve({ exitCode: 0 }) }));
+  await runOneOff(agent, 'task', undefined, { sessionId: 'sid-1', resume: false });
+  let args = runClaudeMock.mock.calls.at(-1)[0].args;
+  expect(args).toContain('--session-id');
+  expect(args).not.toContain('--no-session-persistence');
+
+  await runOneOff(agent, 'more', undefined, { sessionId: 'sid-1', resume: true });
+  args = runClaudeMock.mock.calls.at(-1)[0].args;
+  expect(args.slice(args.indexOf('--resume'), args.indexOf('--resume') + 2)).toEqual(['--resume', 'sid-1']);
+
+  await runOneOff(agent, 'mayor question');
+  expect(runClaudeMock.mock.calls.at(-1)[0].args).toContain('--no-session-persistence');
+});

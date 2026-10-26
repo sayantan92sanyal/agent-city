@@ -237,6 +237,27 @@ export async function fetchTask(taskId) {
 }
 
 /**
+ * Send a follow-up to a finished task. Answers at once with the task running
+ * again; poll `fetchTask` for the reply.
+ * @param {string} taskId
+ * @param {string} message
+ * @param {Array<{name: string, mediaType: string, data: string}>} [attachments]
+ * @returns {Promise<Object>}
+ */
+export async function sendTaskFollowUp(taskId, message, attachments) {
+  const res = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: messageBody(message, attachments),
+  });
+  if (!res.ok) {
+    throw await responseError(res, 'sendTaskFollowUp');
+  }
+  const data = await res.json();
+  return data.task;
+}
+
+/**
  * Mark a finished task's result as read (clears its DONE flag on the map).
  * @param {string} taskId
  */

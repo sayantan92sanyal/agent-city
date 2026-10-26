@@ -135,8 +135,14 @@ export async function runStandingChat({ id, cwd, env, argsFor, message, attachme
   }
 }
 
-export async function runOneOff(agent, message, attachments) {
-  const args = buildOneOffArgs({ agentName: agent.name, message: argvMessage(message, attachments) });
+// Without `session`, the run leaves no Claude session behind (the Mayor's
+// questions to agents). With `{ sessionId, resume }` it starts or resumes
+// that session, so a task can take follow-up messages.
+export async function runOneOff(agent, message, attachments, session) {
+  const argv = argvMessage(message, attachments);
+  const args = session
+    ? (session.resume ? buildResumeArgs : buildStartArgs)({ agentName: agent.name, sessionId: session.sessionId, message: argv })
+    : buildOneOffArgs({ agentName: agent.name, message: argv });
   const turnPromise = runTurn({ args, cwd: agent.projectPath, message, attachments, agent });
 
   let runsForAgent = oneOffRuns.get(agent.id);
