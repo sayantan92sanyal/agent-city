@@ -11,6 +11,8 @@ Everything runs on your Mac through the `claude` command you already use. Agent
 City has no account of its own and sends nothing anywhere except through Claude
 Code.
 
+Link to the article: https://medium.com/@sayantan92sanyal/welcome-to-agent-city-a-pixel-art-town-where-my-claude-agents-live-86ac7f0720e6
+
 ![The Agent City map: three playgrounds with their agents, the Town Hall and a lot for sale](docs/screenshots/city.png)
 
 ## Contents
